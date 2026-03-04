@@ -1,2 +1,2 @@
-# js_project
-js_project is a comprehensive JavaScript learning repository covering basics, ES6 features, TypeScript, DOM manipulation, event handling, asynchronous programming, web security, performance optimization, and frameworks like Angular and React, with examples, exercises, and mini-projects for practical learning.
+# JavaScript Project
+This repository contains my JavaScript projects, including examples, exercises, and mini-projects. The project is a work in progress, and I will continue updating it based on JavaScript concepts, frameworks, and new learnings. Stay tuned for updates and improvements!
