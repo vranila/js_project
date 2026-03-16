@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Advanced To Do List</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <header>
+
+      <h1>Smart To-Do Dashboard</h1>
+
+      <button id="darkModeBtn">🌙 Dark Mode</button>
+
+    </header>
+
+
+    <div class="input-section">
+
+      <input type="text" id="taskInput" placeholder="Enter task" />
+
+      <input type="date" id="dueDate" />
+
+      <select id="category">
+        <option value="Work">Work</option>
+        <option value="Study">Study</option>
+        <option value="Personal">Personal</option>
+      </select>
+
+      <select id="priority">
+        <option value="Low">Low Priority</option>
+        <option value="Medium">Medium Priority</option>
+        <option value="High">High Priority</option>
+      </select>
+
+      <button onclick="addTask()">Add Task</button>
+
+    </div>
+
+
+    <div class="filter-section">
+
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search task..."
+      />
+
+      <select id="categoryFilter">
+        <option value="All">All Categories</option>
+        <option value="Work">Work</option>
+        <option value="Study">Study</option>
+        <option value="Personal">Personal</option>
+      </select>
+
+    </div>
+
+
+    <div class="progress-container">
+
+      <div id="progressBar"></div>
+
+    </div>
+
+
+    <ul id="taskList"></ul>
+
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
