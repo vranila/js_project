@@ -1,165 +1,163 @@
-const taskList = document.getElementById("taskList");
+/* -------------------- DOM Elements -------------------- */
+const taskInput = document.getElementById("taskInput");
+const dueDate = document.getElementById("dueDate");
+const priority = document.getElementById("priority");
+const pendingList = document.getElementById("pendingTasks");
+const completedList = document.getElementById("completedTasks");
+const addBtn = document.getElementById("addTask");
+const darkBtn = document.getElementById("darkBtn");
 
-loadTasks();
+let chart;
+let calendar;
+let editingTask = null; // Currently editing task
 
-function addTask() {
+/* -------------------- ADD / UPDATE TASK -------------------- */
+addBtn.addEventListener("click", function () {
+    const text = taskInput.value.trim();
+    const date = dueDate.value;
+    const level = priority.value;
 
-  const taskInput = document.getElementById("taskInput");
-  const dueDate = document.getElementById("dueDate");
-  const category = document.getElementById("category").value;
-  const priority = document.getElementById("priority").value;
+    if (text === "") {
+        alert("Enter task");
+        return;
+    }
 
-  const taskText = taskInput.value;
+    if (editingTask) {
+        // Update existing task
+        editingTask.querySelector(".taskText").textContent = text;
+        editingTask.className = ""; // Reset class
+        editingTask.classList.add(level.toLowerCase());
+        editingTask.dataset.date = date;
+        editingTask.dataset.priority = level;
 
-  if (taskText === "") {
-    alert("Enter task");
-    return;
-  }
+        editingTask = null;
+        addBtn.textContent = "Add Task";
+    } else {
+        // Add new task
+        const li = document.createElement("li");
+        li.classList.add(level.toLowerCase());
+        li.dataset.date = date;
+        li.dataset.priority = level;
+        li.innerHTML = `
+            <span class="taskText">${text}</span>
+            <div class="actions">
+                <button class="done">✓</button>
+                <button class="edit">Edit</button>
+                <button class="delete">Delete</button>
+            </div>
+        `;
+        pendingList.appendChild(li);
 
-  const li = document.createElement("li");
+        addCalendarEvent(text, date);
+        scheduleNotification(text, date);
+    }
 
-  if (priority === "High") li.classList.add("high");
-  if (priority === "Medium") li.classList.add("medium");
-  if (priority === "Low") li.classList.add("low");
+    taskInput.value = "";
+    dueDate.value = "";
+    priority.value = "Low";
 
-  li.innerHTML = `
-    <span onclick="toggleComplete(this)">
-      ${taskText} | ${category} | Due: ${dueDate.value}
-    </span>
+    saveTasks();
+    updateChart();
+});
 
-    <div class="actions">
+/* -------------------- DARK MODE -------------------- */
+darkBtn.addEventListener("click", () => document.body.classList.toggle("dark"));
 
-      <button onclick="editTask(this)">Edit</button>
+/* -------------------- TASK BUTTON ACTIONS -------------------- */
+document.addEventListener("click", function (e) {
+    const li = e.target.closest("li");
+    if (!li) return;
 
-      <button onclick="deleteTask(this)">Delete</button>
+    if (e.target.classList.contains("done")) {
+        completedList.appendChild(li);
+        e.target.remove();
+        saveTasks();
+        updateChart();
+    }
 
-    </div>
-  `;
+    if (e.target.classList.contains("delete")) {
+        li.remove();
+        saveTasks();
+        updateChart();
+    }
 
-  taskList.appendChild(li);
+    if (e.target.classList.contains("edit")) {
+        taskInput.value = li.querySelector(".taskText").textContent;
+        dueDate.value = li.dataset.date || "";
+        priority.value = li.dataset.priority || "Low";
+        addBtn.textContent = "Update Task";
+        editingTask = li;
+    }
+});
 
-  scheduleReminder(taskText, dueDate.value);
+/* -------------------- DRAG & DROP -------------------- */
+new Sortable(pendingList, { group: "tasks", animation: 150 });
+new Sortable(completedList, { group: "tasks", animation: 150 });
 
-  taskInput.value = "";
-  dueDate.value = "";
-
-  updateProgress();
-  saveTasks();
-}
-
-function toggleComplete(el) {
-
-  el.parentElement.classList.toggle("completed");
-
-  updateProgress();
-  saveTasks();
-
-}
-
-function editTask(btn) {
-
-  const span = btn.parentElement.previousElementSibling;
-
-  const newTask = prompt("Edit Task", span.innerText);
-
-  if (newTask) {
-    span.innerText = newTask;
-  }
-
-  saveTasks();
-
-}
-
-function deleteTask(btn) {
-
-  btn.parentElement.parentElement.remove();
-
-  updateProgress();
-  saveTasks();
-
-}
-
-function searchTask() {
-
-  const filter = document
-    .getElementById("searchInput")
-    .value.toLowerCase();
-
-  const tasks = document.querySelectorAll("li");
-
-  tasks.forEach(task => {
-
-    const text = task.innerText.toLowerCase();
-
-    task.style.display = text.includes(filter)
-      ? "flex"
-      : "none";
-
-  });
-
-}
-
-document
-  .getElementById("searchInput")
-  .addEventListener("keyup", searchTask);
-
-function updateProgress() {
-
-  const tasks = document.querySelectorAll("#taskList li");
-
-  const completed =
-    document.querySelectorAll(".completed");
-
-  const percent =
-    tasks.length === 0
-      ? 0
-      : (completed.length / tasks.length) * 100;
-
-  document.getElementById("progressBar").style.width =
-    percent + "%";
-
-}
-
+/* -------------------- SAVE & LOAD TASKS -------------------- */
 function saveTasks() {
-
-  localStorage.setItem(
-    "tasks",
-    taskList.innerHTML
-  );
-
+    const data = {
+        pending: pendingList.innerHTML,
+        completed: completedList.innerHTML,
+    };
+    localStorage.setItem("tasks", JSON.stringify(data));
 }
 
 function loadTasks() {
+    const data = localStorage.getItem("tasks");
+    if (!data) return;
+    try {
+        const tasks = JSON.parse(data);
+        pendingList.innerHTML = tasks.pending || "";
+        completedList.innerHTML = tasks.completed || "";
+    } catch {
+        localStorage.clear();
+    }
+    updateChart();
+}
+loadTasks();
 
-  taskList.innerHTML =
-    localStorage.getItem("tasks") || "";
+/* -------------------- CHART -------------------- */
+function updateChart() {
+    const pending = pendingList.children.length;
+    const completed = completedList.children.length;
+    const ctx = document.getElementById("taskChart");
 
-  updateProgress();
+    if (chart) chart.destroy();
 
+    chart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+            labels: ["Pending", "Completed"],
+            datasets: [{ data: [pending, completed] }],
+        },
+    });
 }
 
-function scheduleReminder(task, date) {
+/* -------------------- CALENDAR -------------------- */
+document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("calendar");
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+    });
+    calendar.render();
+});
 
-  if (!date) return;
-
-  const dueTime = new Date(date).getTime();
-  const now = new Date().getTime();
-
-  const delay = dueTime - now;
-
-  if (delay > 0) {
-
-    setTimeout(() => {
-
-      alert("Reminder: " + task);
-
-    }, delay);
-
-  }
-
+function addCalendarEvent(task, date) {
+    if (!date || !calendar) return;
+    calendar.addEvent({ title: task, start: date });
 }
 
-document
-  .getElementById("darkModeBtn")
-  .onclick = () =>
-    document.body.classList.toggle("dark");
+/* -------------------- NOTIFICATIONS -------------------- */
+if ("Notification" in window) Notification.requestPermission();
+
+function scheduleNotification(task, date) {
+    if (!date) return;
+    const due = new Date(date).getTime();
+    const now = new Date().getTime();
+    const delay = due - now;
+
+    if (delay > 0) {
+        setTimeout(() => new Notification("Task Reminder", { body: task }), delay);
+    }
+}
