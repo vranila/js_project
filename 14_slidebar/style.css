@@ -1,0 +1,57 @@
+body {
+  font-family: Arial;
+  display: flex;
+  justify-content: center;
+  margin-top: 50px;
+}
+
+.slider {
+  width: 800px;
+  overflow: hidden;
+  position: relative;
+}
+
+.slides {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.slide {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: black;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.prev { left: 10px; }
+.next { right: 10px; }
+
+/* Dots */
+.dots {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.dot {
+  height: 10px;
+  width: 10px;
+  background: gray;
+  display: inline-block;
+  margin: 5px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.active {
+  background: black;
+}
